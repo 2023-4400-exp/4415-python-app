@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: python-app
+  name: python-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: python-app
+  template:
+    metadata:
+      labels:
+        app: python-app
+    spec:
+      containers:
+        - image: marusoftwaremaruos/python-app
+          name: python-app
+          volumeMounts:
+            - mountPath: /var/python-app
+              name: python-app-data
+      volumes:
+        - name: python-app-data
+          persistentVolumeClaim:
+            claimName: python-app-data

@@ -1,0 +1,52 @@
+name: "Build"
+on:
+  push:
+    paths-ignore:
+      - "manifest/**"
+
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: crazy-max/ghaction-docker-buildx@v3
+        with:
+          buildx-version: latest
+          qemu-version: latest
+
+      - name: Build and Publish
+        run: |
+          docker buildx build \
+            -f Dockerfile.prod \
+            --push \
+            --platform linux/arm64,linux/amd64 \
+            -t ghcr.io/2023-4400-exp/4415-python-app:${{ github.sha }} .
+
+      #- name: Update manifest image tag
+      #  id: update-image-tag
+      #  continue-on-error: true
+      #  run: |
+      #    yq eval '.spec.template.spec.containers[0].image = "ghcr.io/2023-4400-exp/4415-go-server-ci:"+env(GITHUB_SHA)' -i ./manifest/deployment.yaml
+      #    git diff --name-only --exit-code
+
+
+      #- name: Commit/Push manifest
+      #  if: steps.update-image-tag.outcome == 'failure'
+      #  run: |
+      #    git config user.name github-actions[bot]
+      #    git config user.email github-actions[bot]@users.noreply.github.com
+      #    git add .
+      #    git commit --author=. -m "Update image tag to $GITHUB_SHA"
+      #    git push
